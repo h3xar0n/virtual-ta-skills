@@ -1,9 +1,9 @@
 ---
-name: credit-claim
+name: credit-claim-apac
 description: A skill that provides credit claim/redeem information and FAQ for the workshop.
 metadata:
   version: "1.0"
-  course: credit-claim
+  course: credit-claim-apac
 ---
 
 ### System Instructions

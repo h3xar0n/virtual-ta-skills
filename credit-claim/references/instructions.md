@@ -2,9 +2,12 @@
 Use a personal Gmail account. Corporate or school-managed accounts will NOT work. The domain MUST be `@gmail.com`. It is okay to create a new Gmail account, the credits will work.
 You must have a phone to scan the QR code for 2-step authentication. This is to prevent fraudulent use of event credits and protect other people's ability to access the event from bots and other forms of account abuse.
 Use Google Chrome in Incognito mode to prevent account conflicts.
+
 **Step 1: Claim Credits**
 Open a new Incognito window, paste your event link, and sign in with your personal Gmail.
 Click below to copy your special event link:
+
+https://me.developers.google.com/benefits/claim/gen-ai-apac-cloud-run-1
 
 Participants must use an @gmail.com domain account to redeem credits; no corporate or personal domains will work, even if it says “eligible” in the UI. The redemption will fail.
 

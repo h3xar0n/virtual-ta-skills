@@ -50,32 +50,34 @@ If the user encounters any of the following specific errors, provide the exact c
     3. Once the Cloud Shell reloads, re-run your `uv run adk web` command.
 * **Error:** `adk: command not found`
   * **Solution:** Tell the user they need to run the command using `uv`. Instruct them to run `uv run adk web` in the terminal.
-* **Error:** `No space left on device` (or user mentions running out of space)
-  * **Solution:** Advise the user to clean up disk space. Suggest removing unwanted files such as `node_modules`, clearing cache, deleting unused Python libraries, or deleting files/folders from yesterday's lab.
-* **Error:** `Please create or add a tag with key 'environment' and a value like 'Production', 'Development', 'Test', or 'Staging'...`
-  * **Solution:** Ignore this message. It is a system warning from Google Cloud that does not affect your workshop progress or the execution of your scripts.
-* **Error:** User sees "Not Found" when opening the port 8080 URL (provided by Cloud Shell).
-  * **Solution:** Inform the user that this "Not Found" message is actually **expected behavior**. The Custom MCP Server is not a web application; it is a backend service for the AI to use. There is no website to see at that URL. As long as the terminal says the server is running, they can proceed to the next step.
-* **Error:** `ValueError: Fail to load 'agent' module. MCP_SERVER_URL not set.`
-  * **Solution:** This error occurs when the MCP environment variable is missing. Instruct the user to follow these steps:
-    1. **Check for Deployment:** Run this command to see if your MCP server is actually deployed:
-       ```bash
-       export MCP_SERVER_URL=$(gcloud run services describe location-analyzer \
-         --region=$REGION --format='value(status.url)')
-       echo "MCP Server URL: $MCP_SERVER_URL"
-       ```
-    2. **Evaluate Result:**
-       * **If the URL is PRINTED:** The service is there! Just refresh your environment and restart the server:
-         ```bash
-         cd $HOME/way-back-home/level_1
-         source $HOME/way-back-home/set_env.sh
-         # Verify environment is set
-         echo "PARTICIPANT_ID: $PARTICIPANT_ID"
-         echo "MCP Server: $MCP_SERVER_URL"
-         # Start ADK web server
-         uv run adk web
-         ```
-       * **If it says "NOT FOUND" or is BLANK:** You might have missed the deployment step. Go back to **Step 4**, specifically the **Deploy MCP Server to Cloud Run** section, and run those deployment commands again!
+* The `gcloud services enable` command requires a 2 to 3 minute propagation window. Moving too quickly to subsequent tasks may result in failures. Use the following command to check if APIs are enabled. 
+
+```shell
+gcloud services list --enabled | grep -E "run|aiplatform|cloudbuild"
+```
+
+* Should an attendee encounter a Cloud Shell timeout, refresh their browser, or launch a separate terminal session, any previously defined environment variables, specifically `$PROJECT_ID` and `$REGION`, will be cleared immediately.  
+* All lab operations must occur within the `~/coffee-barista-agent` directory. If a session disconnects, the user will be reset to the `~` home path; verify their current location to avoid misplaced files.  
+* Manual JSON entry into the editor is prone to errors like truncated content, trailing commas, or missing braces. Make sure to validate using the following command.
+
+```shell
+cat menu.json | python3 -m json.tool > /dev/null && echo "Valid JSON!"
+```
+
+* Copy-pasting ADK or Streamlit logic into Cloud Shell often breaks indentation. This frequently triggers an `IndentationError` during the execution or deployment phase.  
+* During `gcloud run deploy`, a prompt asking `Do you want to continue (Y/n)?` appears for repository creation. Watch for attendees who stall here, assuming the process is still running.  
+* Moving from a local JSON source to a live production database involves significant file changes and is a high-risk point for lab failures.
+
+| Codelab Task | Potential Gotcha | Troubleshooting Tips |
+| :---- | :---- | :---- |
+| 8.1: Initialize Firestore | Incorrect database name used in creation. | The database MUST be named exactly "coffee-menu". If they run the create command without the \--database="coffee-menu" flag (using (default)), the app will crash because "coffee-menu" is hardcoded in the scripts. |
+| 8.2: Seed Firestore | ModuleNotFoundError: No module named 'google' | They forgot to run pip3 install google-cloud-firestore==2.27.0 google-genai==2.11.0 locally in Cloud Shell before executing seed.py. Run the pip3 installation command first. |
+| 8.2: Seed Firestore | Seeding script hangs or fails due to empty env vars. | If their Cloud Shell restarted, PROJECT\_ID and REGION env vars are missing. seed.py will fail to initialize the client. Re-export variables before running `python3 seed.py`. |
+| 8.3: Composite Index | Index build latency causes search failures. | Creating a Firestore vector index runs asynchronously and takes 2 to 5 minutes. If they redeploy and query immediately, the app will throw a Firestore search exception. TAs should tell them to check the build progress in the Cloud Console or wait a few minutes. |
+| 8.4: IAM Roles | Confusing Datastore vs. Firestore roles | TAs must ensure they run the exact command adding roles/datastore.user. Even though it’s Firestore Native, Google Cloud utilizes unified Datastore IAM roles for access. |
+| 8.5: Code Updates | Incomplete block replacement in agent.py & app.py. | Attendees will often append the new Firestore blocks to the bottom of the files instead of replacing the \# \[START ...\] blocks. This causes syntax/naming conflicts. TAs must verify they deleted the old blocks entirely. |
+| 8.5: Code Updates | Forgetting to update requirements.txt | If they don't append the two new Firestore libraries to requirements.txt, the Cloud Run buildpack will fail to package them, and the redeployed container will crash on start. |
+
 
 
 **FALLBACK SEARCH PREPARATION:**

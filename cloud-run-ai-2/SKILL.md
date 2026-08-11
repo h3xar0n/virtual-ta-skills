@@ -1,6 +1,9 @@
 ---
 name: cloud-run-ai-2
 description: A skill that provides Level 2 workshop information based on reference data.
+metadata:
+  version: "1.0"
+  course: cloud-run-ai-2
 ---
 
 

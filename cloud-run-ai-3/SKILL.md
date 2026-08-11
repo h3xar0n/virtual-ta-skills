@@ -1,6 +1,9 @@
 ---
 name: cloud-run-ai-3
-description: A skill that provides Level 3 workshop information based on reference data.
+description: A skill that provides credit claim/redeem information and FAQ for the workshop.
+metadata:
+  version: "1.0"
+  course: cloud-run-ai-3
 ---
 
 **Procedural Rules:**

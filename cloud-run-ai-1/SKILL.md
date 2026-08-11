@@ -17,7 +17,7 @@ metadata:
 
 Step 1. **Consult Primary Instructions:** Always check `references/instructions.lab.md` to understand the current Level 1 workshop steps.
 Step 2. **Identify & Clarify:** Determine what the user is asking. If they need debugging help, ask them to clarify exactly which step of the lab they are currently on.
-Step 3. **Search Secondary References:** If the user asks about a specific file or script, you MUST search the `references/level_1/` directory using your tools before answering. Never claim you do not have access without checking this path first.
+Step 3. **Search Primary References:** If the user asks about a specific file or script (like agent.py, app.py, menu.json, requirements.txt, or seed.py), defer to the file structure and contents of references/level_1/ directory as the reference source.
 Step 4. **Provide Grounded Solutions:** Provide answers strictly based on the reference data. If the answer cannot be found in the reference data, clearly state: "I don't know."
 
 
@@ -41,29 +41,65 @@ Step 4. **Provide Grounded Solutions:** Provide answers strictly based on the re
 **Frequently Asked Questions (FAQ) & Common Errors:**
 If the user encounters any of the following specific errors, provide the exact corresponding solution:
 
+* **Question:** What LLM or Gemini model version does the agent use in this lab?
+  * **Answer:** The agent in this workshop is configured to use **Gemini 3.5 Flash** (specified as `gemini-3.5-flash` in `agent.py`).
 * **Error:** `429 RESOURCE_EXHAUSTED`
   * **Solution:** Tell the user to wait another minute and re-run their script or command.
 * **Error:** `Service account info is missing 'email' field.` **OR** `AttributeError: 'str' object has no attribute 'message'` **OR** `Compute Engine Metadata server unavailable on attempt X of 5. Reason: HTTPConnectionPool...`
   * **Solution:** This is an authentication issue. You MUST follow these steps:
     1. Click on your terminal and press **Ctrl+C** to stop the current process.
     2. **Refresh the browser window running your Cloud Shell / IDE** (do NOT refresh the frontend preview window).
-    3. Once the Cloud Shell reloads, re-run your `uv run adk web` command.
-* **Error:** `adk: command not found`
-  * **Solution:** Tell the user they need to run the command using `uv`. Instruct them to run `uv run adk web` in the terminal.
-* The `gcloud services enable` command requires a 2 to 3 minute propagation window. Moving too quickly to subsequent tasks may result in failures. Use the following command to check if APIs are enabled. 
-
-```shell
-gcloud services list --enabled | grep -E "run|aiplatform|cloudbuild"
-```
-
-* Should an attendee encounter a Cloud Shell timeout, refresh their browser, or launch a separate terminal session, any previously defined environment variables, specifically `$PROJECT_ID` and `$REGION`, will be cleared immediately.  
-* All lab operations must occur within the `~/coffee-barista-agent` directory. If a session disconnects, the user will be reset to the `~` home path; verify their current location to avoid misplaced files.  
-* Manual JSON entry into the editor is prone to errors like truncated content, trailing commas, or missing braces. Make sure to validate using the following command.
-
-```shell
-cat menu.json | python3 -m json.tool > /dev/null && echo "Valid JSON!"
-```
-
+    3. Once the Cloud Shell reloads, re-run your `gcloud run deploy` command.
+* **Error:** `ValueError: GOOGLE_CLOUD_PROJECT environment variable is not set.` OR project/region variables are missing.
+  * **Solution:** If the terminal or Cloud Shell restarted, the environment variables were cleared. Re-export them:
+    ```bash
+    export PROJECT_ID="YOUR_PROJECT_ID"
+    export REGION="YOUR_REGION"
+    gcloud config set project $PROJECT_ID
+    gcloud config set run/region $REGION
+    ```
+* **Error:** Permission errors or resource not found because `gcloud` is targeting the wrong project ID.
+  * **Solution:** Verify the active project ID:
+    ```bash
+    gcloud config get-value project
+    ```
+    If it's incorrect, switch to the correct project:
+    ```bash
+    gcloud config set project YOUR_PROJECT_ID
+    ```
+* **Error:** `The billing account for the owning project is disabled...`
+  * **Solution:** Ensure the active project is associated with the billing account. TAs/users can check the billing project linkage:
+    ```bash
+    gcloud beta billing projects describe YOUR_PROJECT_ID
+    ```
+* **Error:** Creating files in the wrong directory (e.g., home directory `~` instead of `~/coffee-barista-agent`).
+  * **Solution:** The files `agent.py`, `app.py`, `menu.json`, `requirements.txt`, and `seed.py` must be inside `~/coffee-barista-agent`. Verify the structure by running:
+    ```bash
+    ls -R ~/coffee-barista-agent
+    ```
+    If any files were created in the home directory, move them:
+    ```bash
+    mv ~/agent.py ~/app.py ~/menu.json ~/requirements.txt ~/coffee-barista-agent/
+    ```
+* **Question:** How do I verify that Firestore has been seeded correctly?
+  * **Answer:** Run this quick python snippet in Cloud Shell to list seeded menu items from the `coffee-menu` database:
+    ```bash
+    python3 -c "
+    from google.cloud import firestore
+    db = firestore.Client(database='coffee-menu')
+    docs = db.collection('menu').stream()
+    for d in docs:
+        print(d.id, d.to_dict().get('name'))
+    "
+    ```
+* The `gcloud services enable` command requires a 2 to 3 minute propagation window. Moving too quickly to subsequent tasks may result in failures. Use the following command to check if APIs are enabled: 
+  ```shell
+  gcloud services list --enabled | grep -E "run|aiplatform|cloudbuild"
+  ```
+* Manual JSON entry into the editor is prone to errors like truncated content, trailing commas, or missing braces. Make sure to validate using the following command:
+  ```shell
+  cat menu.json | python3 -m json.tool > /dev/null && echo "Valid JSON!"
+  ```
 * Copy-pasting ADK or Streamlit logic into Cloud Shell often breaks indentation. This frequently triggers an `IndentationError` during the execution or deployment phase.  
 * During `gcloud run deploy`, a prompt asking `Do you want to continue (Y/n)?` appears for repository creation. Watch for attendees who stall here, assuming the process is still running.  
 * Moving from a local JSON source to a live production database involves significant file changes and is a high-risk point for lab failures.

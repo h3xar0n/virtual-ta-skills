@@ -17,7 +17,7 @@ metadata:
 
 Step 1. **Consult Primary Instructions:** Always check `references/instructions.lab.md` to understand the current Level 3 workshop steps.
 Step 2. **Identify & Clarify:** Determine what the user is asking. If they need debugging help, ask them to clarify exactly which step of the lab they are currently on.
-Step 3. **Search Secondary References:** If the user asks about a specific file or script, you MUST search the `references/level_3/` directory using your tools before answering. Never claim you do not have access without checking this path first.
+Step 3. **Search Primary References:** If the user asks about a specific file or script (like main.py, requirements.txt, or Dockerfile), defer to the file structure and contents of references/coffee-mgr-agent/ directory as the reference source.
 Step 4. **Provide Grounded Solutions:** Provide answers strictly based on the reference data. If the answer cannot be found in the reference data, clearly state: "I don't know."
 
 
@@ -37,24 +37,56 @@ Step 4. **Provide Grounded Solutions:** Provide answers strictly based on the re
   2. Then, tell them to **refresh the browser window running the Cloud Shell / IDE**, NOT the window running the frontend application.
 
 
-
 **Frequently Asked Questions (FAQ) & Common Errors:**
 If the user encounters any of the following specific errors, provide the exact corresponding solution:
 
+* **Question:** What LLM or Gemini model version does the agent use in this lab?
+  * **Answer:** The agent in this workshop is configured to use **Gemini 3.1 Flash Lite** (specified as `gemini-3.1-flash-lite` in `main.py`).
 * **Error:** `429 RESOURCE_EXHAUSTED`
   * **Solution:** Tell the user to wait another minute and re-run their script or command.
 * **Error:** `Service account info is missing 'email' field.` **OR** `AttributeError: 'str' object has no attribute 'message'` **OR** `Compute Engine Metadata server unavailable on attempt X of 5. Reason: HTTPConnectionPool...`
   * **Solution:** This is an authentication issue. You MUST follow these steps:
     1. Click on your terminal and press **Ctrl+C** to stop the current process.
     2. **Refresh the browser window running your Cloud Shell / IDE** (do NOT refresh the frontend preview window).
-    3. Once the Cloud Shell reloads, re-run your `uv run adk web` command.
-* **Error:** `adk: command not found`
-  * **Solution:** Tell the user they need to run the command using `uv`. Instruct them to run `uv run adk web` in the terminal.
+    3. Once the Cloud Shell reloads, re-run your `gcloud beta run deploy` command.
 * **Error:** `No space left on device` (or user mentions running out of space)
   * **Solution:** Advise the user to clean up disk space. Suggest removing unwanted files such as `node_modules`, clearing cache, deleting unused Python libraries, or deleting files/folders from yesterday's lab.
-
+* **Error:** `ValueError: GOOGLE_CLOUD_PROJECT environment variable is not set.` OR other env variables are missing.
+  * **Solution:** If the terminal or Cloud Shell restarted, the environment variables were cleared. Re-export them:
+    ```bash
+    export GOOGLE_CLOUD_PROJECT="YOUR_PROJECT_ID"
+    export REGION="us-west2"
+    export SA_NAME="coffee-shop-agent-sa"
+    export SERVICE_ACCOUNT_ADDRESS="${SA_NAME}@${GOOGLE_CLOUD_PROJECT}.iam.gserviceaccount.com"
+    export SPREADSHEET_ID="YOUR_SPREADSHEET_ID"
+    gcloud config set project $GOOGLE_CLOUD_PROJECT
+    gcloud config set run/region $REGION
+    ```
+* **Error:** Permission errors or resource not found because `gcloud` is targeting the wrong project ID.
+  * **Solution:** Verify the active project ID:
+    ```bash
+    gcloud config get-value project
+    ```
+    If it's incorrect, switch to the correct project:
+    ```bash
+    gcloud config set project YOUR_PROJECT_ID
+    ```
+* **Error:** `The billing account for the owning project is disabled...`
+  * **Solution:** Ensure the active project is associated with the billing account. TAs/users can check the billing project linkage:
+    ```bash
+    gcloud beta billing projects describe YOUR_PROJECT_ID
+    ```
+* **Error:** Entering code or creating files in the wrong directory (e.g. home directory `~` instead of inside `~/coffee-mgr-agent/`).
+  * **Solution:** Confirm the correct file structure. The files `main.py`, `Dockerfile`, and `requirements.txt` must be located inside `~/coffee-mgr-agent/`. Verify by running:
+    ```bash
+    ls -R ~/coffee-mgr-agent/
+    ```
+    If they are in the home directory, move them:
+    ```bash
+    mv ~/main.py ~/Dockerfile ~/requirements.txt ~/coffee-mgr-agent/
+    ```
 * **Scenario:** User reports "nothing happens" after starting the frontend.
-Solution: Ask the user to clarify exactly which step of the lab they are currently on. Explain that they might have only started the mock server, which runs in the background and is not expected to display anything or be interacted with yet.
+  * **Solution:** Ask the user to clarify exactly which step of the lab they are currently on. Explain that they might have only started the mock server, which runs in the background and is not expected to display anything or be interacted with yet.
 * **Error:** `Please create or add a tag with key 'environment' and a value like 'Production', 'Development', 'Test', or 'Staging'...`
   * **Solution:** Ignore this message. It is a system warning from Google Cloud that does not affect your workshop progress or the execution of your scripts.
 

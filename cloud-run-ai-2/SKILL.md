@@ -1,9 +1,9 @@
 ---
-name: cloud-run-ai-2b
-description: A skill that provides Cloud Run AI Lab 2b (BigQuery MCP Agent) workshop information based on reference data.
+name: cloud-run-ai-2
+description: A skill that provides Cloud Run AI Lab 2 (Gemma 4 BigQuery MCP Agent) workshop information based on reference data.
 metadata:
   version: "1.1"
-  course: cloud-run-ai-2b
+  course: cloud-run-ai-2
 ---
 
 
@@ -14,9 +14,9 @@ metadata:
 4. **Authentication Logic:** If re-authentication is needed, strictly follow the "Refreshing the Browser" instructions.
 
 **Core Workflow:**
-Step 1. **Consult Primary Instructions:** Always check `references/instructions.lab.md` to understand the current Lab 2b workshop steps.
+Step 1. **Consult Primary Instructions:** Always check `references/instructions.lab.md` to understand the current Lab 2 workshop steps.
 Step 2. **Identify & Clarify:** Determine what the user is asking. If they need debugging help, ask them to clarify exactly which step of the lab they are currently on.
-Step 3. **Search Primary References:** If the user asks about a specific file or script (like `agent.py`, `__init__.py`, or `requirements.txt`), search the content of `references/instructions.lab.md`. Note that there are no secondary reference files for this course.
+Step 3. **Search Primary References:** If the user asks about a specific file or script (like `agent.py`, `__init__.py`, or `requirements.txt`), defer to the file structure and contents of references/data_agent/ directory as the reference source.
 Step 4. **Provide Grounded Solutions:** Provide answers strictly based on the reference data. If the answer cannot be found in the reference data, clearly state: "I don't know."
 
 
@@ -49,9 +49,13 @@ Step 4. **Provide Grounded Solutions:** Provide answers strictly based on the re
 If the user encounters any of the following specific errors, provide the exact corresponding solution:
 
 * **Question:** What LLM or Gemini model version does the agent use in this lab?
-  * **Answer:** The agent in this workshop is configured to use **Gemini 3.6 Flash** (specified as `gemini-3.6-flash` in `data_agent/agent.py`).
+  * **Answer:** The agent in this workshop is configured to use **Gemma 4 31B Instruction-Tuned** (running on Cloud Run GPU via LiteLLM, specified as `openai/google/gemma-4-31B-it` in `data_agent/agent.py`), with a fallback to **Gemini 3.5 Flash Lite** in Gemini Enterprise Agent Platform.
 * **Error:** `429 RESOURCE_EXHAUSTED`
   * **Solution:** Tell the user to wait another minute and re-run their script or command.
+* **Scenario:** The command to copy model weights (`gcloud builds submit ... --config=/dev/stdin`) seems stuck or is taking very long.
+  * **Solution:** This command copies large model weights (~60GB) to your GCS bucket and is expected to take **10 to 30 minutes** to complete. Do not cancel the command; it will not show periodic progress updates during the transfer.
+* **Scenario:** Deploying the vLLM Gemma service (`gcloud beta run deploy`) takes several minutes or seems to hang.
+  * **Solution:** Deploying a large model container on GPUs with startup probes takes **3 to 5 minutes** to complete initial deployment. Please wait for it to finish.
 * **Error:** `Service account info is missing 'email' field.` **OR** `AttributeError: 'str' object has no attribute 'message'` **OR** `Compute Engine Metadata server unavailable on attempt X of 5. Reason: HTTPConnectionPool...`
   * **Solution:** This is an authentication issue. You MUST follow these steps:
     1. Click on your terminal and press **Ctrl+C** to stop the current process.
@@ -77,7 +81,7 @@ If the user encounters any of the following specific errors, provide the exact c
     export GOOGLE_CLOUD_LOCATION="global"
     ```
     (Replacing `YOUR_PROJECT_ID` and `YOUR_CLOUD_RUN_REGION` with their actual values).
-* **Error**: Cloud Run deployment fails or container crashes on start for `bq-data-agent`
+* **Error**: Cloud Run deployment fails or container crashes on start for `gemma4-data-agent`
   * **Solution**: Ensure the files are structured correctly inside the `data_agent` folder:
     1. `data_agent/__init__.py` must contain:
        ```python
@@ -86,6 +90,7 @@ If the user encounters any of the following specific errors, provide the exact c
     2. `data_agent/requirements.txt` must contain:
        ```
        google-adk==2.4.*
+       litellm
        mcp==1.29.*
        ```
     3. The deployment command must be executed from the directory containing the `data_agent` folder (NOT from inside `data_agent`).
@@ -116,20 +121,20 @@ If the user encounters any of the following specific errors, provide the exact c
        ```
 
 * **Error:** The deployment command fails, or the deployed agent fails to initialize or connect to BigQuery/Vertex AI due to environment variable parsing issues.
-  * **Solution:** The codelab instructions contain a quotation typo in the `--set-env-vars` argument of the deployment command. Instruct the user to run the corrected command with the quotes removed/fixed:
+  * **Solution:** Instruct the user to run the deployment command with environment variables correctly set:
     ```bash
     uv tool run --from google-adk==2.4.0 \
       adk deploy cloud_run \
           --with_ui \
           --project $GOOGLE_CLOUD_PROJECT \
           --region $GOOGLE_CLOUD_REGION \
-          --service_name bq-data-agent \
+          --service_name gemma4-data-agent \
           --app_name data_agent \
           data_agent \
           -- \
           --allow-unauthenticated \
           --max-instances 1 \
-          --set-env-vars GOOGLE_GENAI_USE_ENTERPRISE=True,GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT},GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}
+          --set-env-vars GOOGLE_GENAI_USE_ENTERPRISE=${GOOGLE_GENAI_USE_ENTERPRISE},MODEL_NAME="${MODEL_NAME}",API_BASE="${API_BASE}",GOOGLE_CLOUD_PROJECT="${GOOGLE_CLOUD_PROJECT}"
     ```
 * **Error:** `API [iam.googleapis.com] not enabled on project [...]` during deployment.
   * **Solution:** Run the following command to enable the IAM API:
